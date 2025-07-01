@@ -1,0 +1,9 @@
+flask
+flask_mail
+flask_sqlalchemy
+flask_login
+Faker
+dotenv
+Pillow
+psycopg2-binary
+requests

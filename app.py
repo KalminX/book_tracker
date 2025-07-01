@@ -273,6 +273,84 @@ def test_email():
     return redirect(url_for('index'))
 
 
+from werkzeug.security import generate_password_hash
+
+# --- Forgot Password Request ---
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            token = serializer.dumps({'user_id': user.id})
+            reset_url = url_for('reset_password', token=token, _external=True)
+
+            # Compose email body with reset_url
+            subject = "Password Reset Request"
+            body = f"""
+            To reset your password, click the following link:
+            {reset_url}
+
+            If you did not request this, please ignore this email.
+            This link expires in 1 hour.
+            """
+            # Send email (reuse your existing mail setup)
+            from flask_mail import Message
+            msg = Message(subject=subject, recipients=[email], body=body)
+            mail.send(msg)
+
+            flash("Password reset email sent! Check your inbox.", "info")
+        else:
+            flash("No account found with that email address.", "warning")
+
+    return render_template('forgot_password.html')
+
+
+# --- Reset Password ---
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    try:
+        data = serializer.loads(token, max_age=3600)  # 1 hour expiry
+        user_id = data['user_id']
+    except SignatureExpired:
+        flash("The reset link has expired.", "danger")
+        return redirect(url_for('forgot_password'))
+    except BadSignature:
+        flash("Invalid reset token.", "danger")
+        return redirect(url_for('forgot_password'))
+
+    user = User.query.get(user_id)
+    if not user:
+        flash("Invalid user.", "danger")
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
+
+        if not password or not password_confirm:
+            flash("Please fill out both password fields.", "warning")
+            return render_template('reset_password.html', token=token)
+
+        if password != password_confirm:
+            flash("Passwords do not match.", "warning")
+            return render_template('reset_password.html', token=token)
+
+        user.set_password(password)  # Assuming your User model has this method
+        db.session.commit()
+
+        flash("Your password has been reset! Please log in.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', token=token)
+
+
 # --- Main Execution (only when running directly) ---
 if __name__ == "__main__":
     with app.app_context():

@@ -25,9 +25,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "your_default_secret_key")
 
     # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI") or \
-        f"sqlite:///{os.path.join(basedir, 'book.db')}"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
 
     # Upload Folder Configuration for book covers
     UPLOAD_FOLDER_BASE = 'static' # Base directory for static files

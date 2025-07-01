@@ -24,12 +24,16 @@ class Config:
     """
     SECRET_KEY = os.getenv("SECRET_KEY", "your_default_secret_key")
 
-    # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    # Fix DATABASE_URL for SQLAlchemy on Heroku (postgres:// -> postgresql://)
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
 
     # Upload Folder Configuration for book covers
-    UPLOAD_FOLDER_BASE = 'static' # Base directory for static files
-    UPLOAD_FOLDER_SUB = os.path.join('images', 'book_covers') # Subdirectory for book covers
+    UPLOAD_FOLDER_BASE = 'static'  # Base directory for static files
+    UPLOAD_FOLDER_SUB = os.path.join('images', 'book_covers')  # Subdirectory for book covers
 
     # Mail Configuration
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
@@ -40,7 +44,6 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@example.com")
 
-
 def create_app():
     """
     Factory function to create and configure the Flask application.
@@ -50,30 +53,23 @@ def create_app():
     app.config.from_object(Config)
 
     # Ensure the upload folder exists
-    # app.root_path gives the path to the directory containing the app.py file
     upload_path = os.path.join(app.root_path, Config.UPLOAD_FOLDER_BASE, Config.UPLOAD_FOLDER_SUB)
     os.makedirs(upload_path, exist_ok=True)
-    app.config['UPLOAD_FOLDER'] = upload_path # Set the full path in app.config
+    app.config['UPLOAD_FOLDER'] = upload_path  # Set the full path in app.config
 
     # Initialize Extensions with the app
-    # Use the 'db' instance imported from models.py
     db.init_app(app)
 
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = "login" # The view function name for the login page
+    login_manager.login_view = "login"
 
     mail = Mail(app)
 
-    # Serializer for secure token generation (e.g., for email confirmation)
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
     @login_manager.user_loader
     def load_user(user_id):
-        """
-        Callback to reload the user object from the user ID stored in the session.
-        """
         return User.query.get(int(user_id))
 
     return app, db, login_manager, mail, serializer
-

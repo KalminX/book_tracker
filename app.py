@@ -5,6 +5,9 @@ import os
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from itsdangerous import SignatureExpired, BadSignature
+from flask_migrate import Migrate
+from flask_mail import Message
+from werkzeug.security import generate_password_hash
 
 # --- Local Module Imports ---
 from config import create_app
@@ -13,16 +16,20 @@ from models import db, User, Book
 
 # --- App Setup ---
 app, db, login_manager, mail, serializer = create_app()
+migrate = Migrate(app, db)
+
 
 # --- Shell Context Processor ---
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, User=User, Book=Book)
 
+
 # =======================
-#       ROUTES
+#         ROUTES
 # =======================
 
+# Home / Book List
 @app.route("/")
 @login_required
 def index():
@@ -57,6 +64,7 @@ def index():
     )
 
 
+# Add Book
 @app.route("/add", methods=["GET", "POST"])
 @login_required
 def add():
@@ -70,7 +78,6 @@ def add():
         if 'image' in request.files:
             image = request.files['image']
             if image.filename and allowed_file(image.filename):
-                # Pass app.config['UPLOAD_FOLDER'] as the second parameter
                 image_file_url = save_picture(image, app.config['UPLOAD_FOLDER'])
                 if not image_file_url:
                     flash('Failed to upload image to GitHub.', 'danger')
@@ -79,7 +86,6 @@ def add():
                 flash('Invalid image file type.', 'danger')
                 return render_template('add.html', title=title, author=author, genre=genre, status=status)
 
-        # Use default image URL or GitHub image URL
         if not image_file_url:
             image_file_url = url_for('static', filename='default_book.png')
 
@@ -99,6 +105,7 @@ def add():
     return render_template('add.html')
 
 
+# Edit Book
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit(id):
@@ -113,15 +120,12 @@ def edit(id):
         if 'image' in request.files:
             image = request.files['image']
             if image.filename and allowed_file(image.filename):
-                # Delete old image if it's not the default one
                 if book.image_file and book.image_file != os.path.join(app.config.get('UPLOAD_FOLDER_SUB', ''), 'default_book.png'):
-                    # Pass app.config['UPLOAD_FOLDER'] as the second parameter
                     delete_picture(book.image_file, app.config['UPLOAD_FOLDER'])
                 
-                # Pass app.config['UPLOAD_FOLDER'] as the second parameter
                 image_file_url = save_picture(image, app.config['UPLOAD_FOLDER'])
                 if not image_file_url:
-                    flash('Failed to save image.', 'danger') # Changed flash message
+                    flash('Failed to save image.', 'danger')
                     return render_template('edit.html', book=book)
                 
                 book.image_file = image_file_url
@@ -129,11 +133,9 @@ def edit(id):
                 flash('Invalid image file type.', 'danger')
                 return render_template('edit.html', book=book)
         else:
-            # If no new image is uploaded, ensure the default path is correctly set if it was previously default
-            # This handles cases where old default path might have been just 'default_book.png'
-            if book.image_file == 'default_book.png': # Check for old default path
+            # Fix old default image path if needed
+            if book.image_file == 'default_book.png':
                 book.image_file = os.path.join(app.config.get('UPLOAD_FOLDER_SUB', ''), 'default_book.png')
-            # If no new image, and current image is not 'default_book.png', then keep existing image_file
 
         db.session.commit()
         flash('Book updated successfully!', 'success')
@@ -142,12 +144,11 @@ def edit(id):
     return render_template('edit.html', book=book)
 
 
+# Delete Book
 @app.route("/delete/<int:id>")
 @login_required
 def delete(id):
     book = Book.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    # If your images are on GitHub, consider implementing deletion via GitHub API or skip
-    # Ensure app.config['UPLOAD_FOLDER'] is passed consistently
     if book.image_file != url_for('static', filename='default_book.png'):
         delete_picture(book.image_file, app.config['UPLOAD_FOLDER'])
     db.session.delete(book)
@@ -156,6 +157,9 @@ def delete(id):
     return redirect(url_for("index"))
 
 
+# --- Authentication Routes ---
+
+# Login
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -164,12 +168,12 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        print(f"Attempting login for email: {username}") # DEBUG PRINT
+        print(f"Attempting login for email: {username}")  # DEBUG PRINT
         user = User.query.filter_by(username=username).first()
         if user:
-            print(f"User found: {user.username}, Confirmed: {user.confirmed}") # DEBUG PRINT
+            print(f"User found: {user.username}, Confirmed: {user.confirmed}")  # DEBUG PRINT
             if user.check_password(password):
-                print("Password check passed!") # DEBUG PRINT
+                print("Password check passed!")  # DEBUG PRINT
                 if user.confirmed:
                     login_user(user)
                     flash("Logged in successfully!", "success")
@@ -177,15 +181,16 @@ def login():
                 else:
                     flash("Please confirm your email address first.", "warning")
             else:
-                print("Password check failed.") # DEBUG PRINT
+                print("Password check failed.")  # DEBUG PRINT
                 flash("Invalid email or password.", "danger")
         else:
-            print("User not found for this email.") # DEBUG PRINT
+            print("User not found for this email.")  # DEBUG PRINT
             flash("Invalid email or password.", "danger")
 
     return render_template("login.html")
 
 
+# Register
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
@@ -215,6 +220,7 @@ def register():
     return render_template("register.html")
 
 
+# Confirm Email
 @app.route("/confirm/<token>")
 def confirm_email(token):
     if current_user.is_authenticated:
@@ -247,6 +253,7 @@ def confirm_email(token):
     return redirect(url_for("login"))
 
 
+# Logout
 @app.route("/logout")
 @login_required
 def logout():
@@ -255,6 +262,7 @@ def logout():
     return redirect(url_for("login"))
 
 
+# Test Email Route (for testing email config)
 @app.route("/test-email")
 def test_email():
     test_user_email = os.getenv("MAIL_USERNAME")
@@ -273,9 +281,9 @@ def test_email():
     return redirect(url_for('index'))
 
 
-from werkzeug.security import generate_password_hash
+# --- Password Reset Routes ---
 
-# --- Forgot Password Request ---
+# Forgot Password
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if current_user.is_authenticated:
@@ -288,7 +296,6 @@ def forgot_password():
             token = serializer.dumps({'user_id': user.id})
             reset_url = url_for('reset_password', token=token, _external=True)
 
-            # Compose email body with reset_url
             subject = "Password Reset Request"
             body = f"""
             To reset your password, click the following link:
@@ -297,8 +304,7 @@ def forgot_password():
             If you did not request this, please ignore this email.
             This link expires in 1 hour.
             """
-            # Send email (reuse your existing mail setup)
-            from flask_mail import Message
+
             msg = Message(subject=subject, recipients=[email], body=body)
             mail.send(msg)
 
@@ -309,7 +315,7 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 
-# --- Reset Password ---
+# Reset Password
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     if current_user.is_authenticated:
@@ -342,7 +348,7 @@ def reset_password(token):
             flash("Passwords do not match.", "warning")
             return render_template('reset_password.html', token=token)
 
-        user.set_password(password)  # Assuming your User model has this method
+        user.set_password(password)
         db.session.commit()
 
         flash("Your password has been reset! Please log in.", "success")
@@ -351,7 +357,7 @@ def reset_password(token):
     return render_template('reset_password.html', token=token)
 
 
-# --- Main Execution (only when running directly) ---
+# --- Main Execution ---
 if __name__ == "__main__":
     with app.app_context():
         print(f"DEBUG: DATABASE URI -> {os.getenv('DATABASE_URI')}")

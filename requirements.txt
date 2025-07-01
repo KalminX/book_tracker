@@ -8,3 +8,4 @@ Pillow
 psycopg2-binary
 requests
 gunicorn
+flask_migrate

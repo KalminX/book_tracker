@@ -29,8 +29,7 @@ class Config:
     if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL
-
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or f"sqlite:///{os.path.join(basedir, 'app.db')}"
     # Upload Folder Configuration for book covers
     UPLOAD_FOLDER_BASE = 'static'  # Base directory for static files
     UPLOAD_FOLDER_SUB = os.path.join('images', 'book_covers')  # Subdirectory for book covers

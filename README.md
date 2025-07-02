@@ -1,58 +1,58 @@
-# Book Tracker App
+# 📚 Book Tracker App
 
 A personal book management web application built with Flask.  
-Track your reading progress, manage your book collection, upload cover images, and stay organized with ease.
+Track your reading progress, manage your book collection, upload cover images, and stay organized with ease. 📖✨
 
 ---
 
-## Demo
+## 🚀 Demo
 
-Try the live app here: [https://kal-book-app-ab180bb075cb.herokuapp.com/]
-
----
-
-## Features
-
-- User registration, login, email confirmation, and password reset  
-- Add, edit, and delete books with cover images  
-- Filter books by reading status (read, unread, reading, finished, on-hold)  
-- Upload book cover images with validation and default placeholders  
-- Secure authentication with password hashing  
-- Email confirmation and password reset via secure tokens  
-- Responsive and user-friendly interface  
+Try the live app here: [https://kal-book-app-ab180bb075cb.herokuapp.com/] 🔗
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-- Python 3.10+  
-- Flask web framework  
-- Flask-Login for user sessions  
-- Flask-Mail for email integration  
-- SQLAlchemy as ORM  
-- Alembic for database migrations  
-- PostgreSQL (on Heroku) as the production database  
-- WTForms / HTML forms for input  
-- Bootstrap (or your choice) for styling  
+- 👤 User registration, login, email confirmation, and password reset  
+- ➕✏️🗑️ Add, edit, and delete books with cover images  
+- 🔍 Filter books by reading status (read, unread, reading, finished, on-hold)  
+- 📤 Upload book cover images with validation and default placeholders  
+- 🔐 Secure authentication with password hashing  
+- 📧 Email confirmation and password reset via secure tokens  
+- 📱 Responsive and user-friendly interface  
 
 ---
 
-## Installation
+## 🛠️ Tech Stack
 
-### Prerequisites
+- 🐍 Python 3.10+  
+- 🌐 Flask web framework  
+- 🔑 Flask-Login for user sessions  
+- 📬 Flask-Mail for email integration  
+- 🗄️ SQLAlchemy as ORM  
+- 🔄 Alembic for database migrations  
+- 🐘 PostgreSQL (on Heroku) as the production database  
+- 📝 WTForms / HTML forms for input  
+- 🎨 Bootstrap (or your choice) for styling  
 
-- Python 3.10+  
-- PostgreSQL (or use Heroku Postgres)  
-- Git  
+---
 
-### Clone the repository
+## ⚙️ Installation
+
+### 📋 Prerequisites
+
+- 🐍 Python 3.10+  
+- 🐘 PostgreSQL (or use Heroku Postgres)  
+- 🧰 Git  
+
+### 📥 Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/book_tracker.git
 cd book_tracker
 ````
 
-### Create a virtual environment and activate it
+### 🐍 Create a virtual environment and activate it
 
 ```bash
 python -m venv venv
@@ -60,13 +60,13 @@ source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
 ```
 
-### Install dependencies
+### 📦 Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Set up environment variables
+### 🔧 Set up environment variables
 
 Create a `.env` file (or set environment variables) with the following variables:
 
@@ -82,7 +82,7 @@ MAIL_USERNAME=your_email@example.com
 MAIL_PASSWORD=your_email_password
 ```
 
-### Initialize the database
+### 🛢️ Initialize the database
 
 ```bash
 flask db init
@@ -92,17 +92,17 @@ flask db upgrade
 
 ---
 
-## Running the app locally
+## ▶️ Running the app locally
 
 ```bash
 flask run
 ```
 
-The app will be available at `http://127.0.0.1:5000`
+The app will be available at `http://127.0.0.1:5000` 🌐
 
 ---
 
-## Deployment
+## ☁️ Deployment
 
 This app can be deployed to Heroku easily with PostgreSQL add-on enabled. After pushing to Heroku, run:
 
@@ -110,11 +110,11 @@ This app can be deployed to Heroku easily with PostgreSQL add-on enabled. After 
 heroku run flask db upgrade --app your-heroku-app-name
 ```
 
-to apply migrations.
+to apply migrations. 🚀
 
 ---
 
-## Folder Structure
+## 📂 Folder Structure
 
 ```
 book_tracker/
@@ -131,13 +131,13 @@ book_tracker/
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please fork the repo and create a pull request with improvements.
+Contributions are welcome! Please fork the repo and create a pull request with improvements. 💡✨
 
 ---
 
-## License
+## 📜 License
 
 MIT License © 2025 Kalmin
 
